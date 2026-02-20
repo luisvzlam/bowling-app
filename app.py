@@ -2,7 +2,7 @@ import streamlit as st
 from supabase import create_client
 
 # 1. Page Configuration
-st.set_page_config(page_title="Bowling App", page_icon="🎳")
+st.set_page_config(page_title="Tribu Strike", page_icon="🎳")
 
 # 2. Secure Connection Setup
 # We use st.secrets so your actual keys are NOT hardcoded in the script.
@@ -15,10 +15,10 @@ else:
     st.stop()
 
 # 3. App Title
-st.title("🎳 Bowling App: Live Feed")
+st.title("🎳 Tribu Strike")
 
 # --- 📊 SECTION 4: ALL-TIME TOP 5 SCORES ---
-st.header("🏆 Top 5 Leaderboard")
+st.header("🏆 Top 5 Scores")
 
 try:
     # 1. Fetch scores and names, ordered by score immediately in the query
