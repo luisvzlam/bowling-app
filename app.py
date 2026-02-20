@@ -52,6 +52,8 @@ try:
 
 except Exception as e:
     st.error(f"Error loading leaderboard: {e}")
+# This tells Streamlit to display the data without the row numbers
+st.dataframe(leaderboard, hide_index=True, use_container_width=True)
 
 # 5. Input Section (Create)
 st.divider()
