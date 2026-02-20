@@ -1,41 +1,45 @@
 import streamlit as st
 from supabase import create_client
 
-# -----------------------------
-# 🔑 Supabase Connection
-# -----------------------------
-SUPABASE_URL = "https://lgiaftbwvsphqvxlhxij.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxnaWFmdGJ3dnNwaHF2eGxoeGlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1MjU2MTUsImV4cCI6MjA4NzEwMTYxNX0.EqNQ7_LwS5I_vWfqCbumq0Z7OzmNJVu__R_vBf82K5o"
-
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-
+# 1. Page Configuration
 st.set_page_config(page_title="Bowling App", page_icon="🎳")
 
-st.title("🎳 Bowling Score App")
-
-# -----------------------------
-# ➕ Create Player
-# -----------------------------
-st.header("Add New Player")
-
-player_name = st.text_input("Player Name")
-
-if st.button("Create Player"):
-    if player_name:
-        supabase.table("players").insert({"name": player_name}).execute()
-        st.success("Player created successfully!")
-    else:
-        st.warning("Please enter a name.")
-
-# -----------------------------
-# 📋 Show Players
-# -----------------------------
-st.header("Players List")
-
-response = supabase.table("players").select("*").execute()
-
-if response.data:
-    for player in response.data:
-        st.write(f"ID: {player['id']} | Name: {player['name']}")
+# 2. Secure Connection Setup
+# We use st.secrets so your actual keys are NOT hardcoded in the script.
+if "SUPABASE_URL" in st.secrets and "SUPABASE_KEY" in st.secrets:
+    URL = st.secrets["SUPABASE_URL"]
+    KEY = st.secrets["SUPABASE_KEY"]
+    db = create_client(URL, KEY)
 else:
-    st.info("No players found.")
+    st.error("Missing Secrets! Go to Streamlit Settings and add SUPABASE_URL and SUPABASE_KEY.")
+    st.stop()
+
+# 3. App Title
+st.title("🎳 Bowling App: Live Feed")
+
+# 4. Display Section (Read)
+st.header("Current Players")
+try:
+    res = db.table("players").select("*").execute()
+    if res.data:
+        st.dataframe(res.data, use_container_width=True)
+    else:
+        st.info("No players found. Use the form below to add one!")
+except Exception as e:
+    st.error(f"Database Error: {e}")
+
+# 5. Input Section (Create)
+st.divider()
+st.subheader("Add New Player")
+with st.form("player_entry", clear_on_submit=True):
+    name = st.text_input("Player Name")
+    if st.form_submit_button("Add to Database"):
+        if name:
+            try:
+                db.table("players").insert({"name": name}).execute()
+                st.success(f"Added {name}!")
+                st.rerun() # Refreshes the list immediately
+            except Exception as e:
+                st.error(f"Failed to add player: {e}")
+        else:
+            st.warning("Please enter a name.")
