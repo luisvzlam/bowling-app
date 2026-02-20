@@ -45,8 +45,7 @@ try:
         ]
         # Sort by score descending
         leaderboard = sorted(leaderboard, key=lambda x: x['High Score'], reverse=True)[:5]
-        
-        st.table(leaderboard)
+        st.dataframe(leaderboard, hide_index=True, use_container_width=True)
     else:
         st.info("No scores recorded yet!")
 
