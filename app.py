@@ -47,9 +47,9 @@ try:
 except Exception as e:
     st.error(f"Error loading leaderboard: {e}")
 
-# --- 📈 SECTION 6: TOP 5 AVERAGES ---
+# --- 📈 SECTION 5: TOP 5 AVERAGES ---
 st.divider()
-st.header("🥗 Consistency Leaderboard (Top 5 Averages)")
+st.header("Top 5 Averages")
 
 try:
     # 1. Fetch ALL scores to calculate accurate averages
@@ -90,7 +90,7 @@ except Exception as e:
     st.error(f"Error in Section 6: {e}")
 
 
-# --- 📝 SECTION 5: RECORD A NEW SCORE ---
+# --- 📝 SECTION 6: RECORD A NEW SCORE ---
 st.divider()
 st.subheader("Add New Score")
 
