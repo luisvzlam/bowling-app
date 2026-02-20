@@ -41,40 +41,53 @@ try:
 
 except Exception as e:
     st.error(f"Error loading leaderboard: {e}")
+
 # --- 📝 SECTION 5: RECORD A NEW SCORE ---
 st.divider()
 st.subheader("Add New Score")
 
 try:
-    # 1. Fetch current players so we can choose one from a list
+    # 1. Fetch current players
     player_res = db.table("players").select("id, name").execute()
+    player_map = {p['name']: p['id'] for p in player_res.data} if player_res.data else {}
     
-    if player_res.data:
-        # Create a dictionary to map names to IDs: {"Luis": 1, "Friend": 2}
-        player_map = {p['name']: p['id'] for p in player_res.data}
-        player_names = list(player_map.keys())
+    # 2. Add a special option to the list
+    player_options = ["+ Add New Player"] + list(player_map.keys())
 
-        with st.form("score_form", clear_on_submit=True):
-            # Input fields
-            selected_name = st.selectbox("Select Player", options=player_names)
-            new_score = st.number_input("Enter Score", min_value=0, max_value=300, step=1)
+    with st.form("score_form", clear_on_submit=True):
+        selected_option = st.selectbox("Who is playing?", options=player_options)
+        
+        # 3. Show a text input ONLY if "+ Add New Player" is selected
+        new_player_name = ""
+        if selected_option == "+ Add New Player":
+            new_player_name = st.text_input("Enter New Player Name")
+        
+        new_score = st.number_input("Score", min_value=0, max_value=300, step=1)
+        submit_score = st.form_submit_button("Save Score")
+
+        if submit_score:
+            target_id = None
             
-            submit_score = st.form_submit_button("Save Score")
+            # 4. If it's a new player, insert them into the 'players' table first
+            if selected_option == "+ Add New Player":
+                if new_player_name.strip():
+                    new_p_res = db.table("players").insert({"name": new_player_name}).execute()
+                    target_id = new_p_res.data[0]['id']
+                else:
+                    st.error("Please enter a name for the new player.")
+                    st.stop()
+            else:
+                target_id = player_map[selected_option]
 
-            if submit_score:
-                # Get the ID for the selected name
-                chosen_id = player_map[selected_name]
-                
-                # Insert the score into the 'scores' table
+            # 5. Insert the score using the ID (either existing or newly created)
+            if target_id:
                 db.table("scores").insert({
-                    "player_id": chosen_id,
+                    "player_id": target_id,
                     "score_value": new_score
                 }).execute()
                 
-                st.success(f"Successfully saved score of {new_score} for {selected_name}!")
+                st.success(f"Score saved for {new_player_name if new_player_name else selected_option}!")
                 st.rerun()
-    else:
-        st.warning("No players found. Please add a player in the database first!")
 
 except Exception as e:
-    st.error(f"Error loading players or saving score: {e}")
+    st.error(f"Error: {e}")
