@@ -17,31 +17,41 @@ else:
 # 3. App Title
 st.title("🎳 Bowling App: Live Feed")
 
-# --- 📊 SECTION 4: TOP 5 LEADERBOARD ---
-st.header("🏆 Top 5 Leaderboard")
+# --- 📊 SECTION 4: HIGHEST SCORE LEADERBOARD ---
+st.header("🏆 Top 5 High Scores")
 
 try:
-    # 1. We tell Supabase to get the score AND the name from the linked player table
-    # 2. We order by score_value (High to Low)
-    # 3. We limit to the top 5
+    # 1. Fetch scores and player names
     res = db.table("scores").select("""
         score_value,
         players ( name )
-    """).order("score_value", desc=True).limit(5).execute()
+    """).execute()
 
     if res.data:
-        # We clean the data so it looks nice in the table (removing brackets/braces)
-        formatted_leaderboard = [
-            {"Player": row['players']['name'], "Score": row['score_value']} 
-            for row in res.data
+        # 2. Logic to keep only the HIGHEST score for each player
+        highest_scores = {}
+        for row in res.data:
+            name = row['players']['name']
+            score = row['score_value']
+            
+            # If player not seen or this score is higher than their previous record
+            if name not in highest_scores or score > highest_scores[name]:
+                highest_scores[name] = score
+
+        # 3. Format, Sort, and Limit to Top 5
+        leaderboard = [
+            {"Player": name, "High Score": score} 
+            for name, score in highest_scores.items()
         ]
-        st.table(formatted_leaderboard)
+        # Sort by score descending
+        leaderboard = sorted(leaderboard, key=lambda x: x['High Score'], reverse=True)[:5]
+        
+        st.table(leaderboard)
     else:
-        st.info("No scores found yet!")
+        st.info("No scores recorded yet!")
 
 except Exception as e:
     st.error(f"Error loading leaderboard: {e}")
-    st.info("💡 Tip: Ensure your 'scores' table has a Foreign Key column linking to 'players'.")
 
 # 5. Input Section (Create)
 st.divider()
