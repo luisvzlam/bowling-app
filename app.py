@@ -21,38 +21,43 @@ st.title("🎳 Bowling App: Live Feed")
 st.header("🏆 Top 5 High Scores")
 
 try:
-    # 1. Fetch scores and player names
+    # 1. Fetch scores and join with player names
+    # This pulls the score and the name associated with the player_id
     res = db.table("scores").select("""
         score_value,
         players ( name )
     """).execute()
 
     if res.data:
-        # 2. Logic to keep only the HIGHEST score for each player
+        # 2. Logic to keep only the HIGHEST score for each unique player
         highest_scores = {}
         for row in res.data:
             name = row['players']['name']
             score = row['score_value']
             
-            # If player not seen or this score is higher than their previous record
+            # Update if this is the first time seeing the player or if they got a new PB
             if name not in highest_scores or score > highest_scores[name]:
                 highest_scores[name] = score
 
-        # 3. Format, Sort, and Limit to Top 5
+        # 3. Format into a list of dictionaries for Streamlit
         leaderboard = [
             {"Player": name, "High Score": score} 
             for name, score in highest_scores.items()
         ]
-        # Sort by score descending
+        
+        # 4. Sort by score (descending) and take the top 5
         leaderboard = sorted(leaderboard, key=lambda x: x['High Score'], reverse=True)[:5]
+        
+        # 5. Display the table cleanly
+        # hide_index=True removes the "0" column
+        # use_container_width=True makes it look great on all screens
         st.dataframe(leaderboard, hide_index=True, use_container_width=True)
+        
     else:
-        st.info("No scores recorded yet!")
+        st.info("No scores recorded yet! Add a score in Supabase to see it here.")
 
 except Exception as e:
     st.error(f"Error loading leaderboard: {e}")
-# This tells Streamlit to display the data without the row numbers
-st.dataframe(leaderboard, hide_index=True, use_container_width=True)
 
 # 5. Input Section (Create)
 st.divider()
