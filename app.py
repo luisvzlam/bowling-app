@@ -114,3 +114,45 @@ try:
 
 except Exception as e:
     st.error(f"Error: {e}")
+
+# --- 📈 SECTION 6: TOP 5 AVERAGES ---
+st.divider()
+st.header("🥗 Consistency Leaderboard (Top 5 Averages)")
+
+try:
+    # 1. Fetch ALL scores to calculate accurate averages
+    # We need player names from the related table
+    avg_res = db.table("scores").select("score_value, players(name)").execute()
+
+    if avg_res.data:
+        # 2. Group scores by player name
+        player_stats = {}
+        for row in avg_res.data:
+            name = row['players']['name']
+            score = row['score_value']
+            
+            if name not in player_stats:
+                player_stats[name] = []
+            player_stats[name].append(score)
+
+        # 3. Calculate Average and Game Count
+        summary_data = []
+        for name, scores in player_stats.items():
+            avg_score = sum(scores) / len(scores)
+            summary_data.append({
+                "Player": name,
+                "Average": round(avg_score, 1),
+                "Games": len(scores)
+            })
+
+        # 4. Sort by Average (Descending) and take Top 5
+        summary_data = sorted(summary_data, key=lambda x: x['Average'], reverse=True)[:5]
+
+        # 5. Display the consistency board
+        st.table(summary_data) 
+        # Note: I used st.table here for a different visual style than the dataframe above!
+    else:
+        st.info("Not enough data to calculate averages yet.")
+
+except Exception as e:
+    st.error(f"Error in Section 6: {e}")
