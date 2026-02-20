@@ -17,45 +17,30 @@ else:
 # 3. App Title
 st.title("🎳 Bowling App: Live Feed")
 
-# --- 📊 SECTION 4: HIGHEST SCORE LEADERBOARD ---
-st.header("🏆 Top 5 High Scores")
-
-# This helps clear any stuck data in the browser's memory
-if st.sidebar.button("Force Refresh Data"):
-    st.cache_data.clear()
-    st.rerun()
+# --- 📊 SECTION 4: ALL-TIME TOP 5 SCORES ---
+st.header("🏆 Top 5 Leaderboard")
 
 try:
-    # We fetch the data. If it's still showing 255, 
-    # the issue might be RLS or the specific query.
-    res = db.table("scores").select("score_value, players(name)").execute()
+    # 1. Fetch scores and names, ordered by score immediately in the query
+    res = db.table("scores").select("""
+        score_value,
+        players ( name )
+    """).order("score_value", desc=True).limit(5).execute()
 
     if res.data:
-        # --- DEBUG LINE: Remove this once fixed ---
-        # st.write("Raw data from DB:", res.data) 
-
-        highest_scores = {}
-        for row in res.data:
-            # Handle the joined name correctly
-            name = row['players']['name']
-            score = row['score_value']
-            
-            if name not in highest_scores or score > highest_scores[name]:
-                highest_scores[name] = score
-
+        # 2. Flatten the data (No "highest_score" dictionary needed here)
         leaderboard = [
-            {"Player": name, "High Score": score} 
-            for name, score in highest_scores.items()
+            {"Player": row['players']['name'], "Score": row['score_value']} 
+            for row in res.data
         ]
         
-        leaderboard = sorted(leaderboard, key=lambda x: x['High Score'], reverse=True)[:5]
+        # 3. Display the top scores
         st.dataframe(leaderboard, hide_index=True, use_container_width=True)
     else:
-        st.info("No scores found.")
+        st.info("No scores recorded yet!")
 
 except Exception as e:
-    st.error(f"Leaderboard Error: {e}")
-
+    st.error(f"Error loading leaderboard: {e}")
 # --- 📝 SECTION 5: RECORD A NEW SCORE ---
 st.divider()
 st.subheader("Add New Score")
