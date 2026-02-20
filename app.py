@@ -83,6 +83,8 @@ try:
         # 5. Display the consistency board
         st.table(summary_data) 
         # Note: I used st.table here for a different visual style than the dataframe above!
+    st.dataframe(avg_list, hide_index=True, use_container_width=True)
+    
     else:
         st.info("Not enough data to calculate averages yet.")
 
