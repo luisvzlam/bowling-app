@@ -47,46 +47,40 @@ try:
 except Exception as e:
     st.error(f"Error loading leaderboard: {e}")
 
-# --- 📈 SECTION 5: TOP 5 AVERAGES ---
-st.divider()
-st.header("Top 5 Averages")
+# --- 📈 SECTION 6: TOP 5 AVERAGES (Consistency) ---
+st.header("🥗 Top 5 Averages")
 
 try:
     # 1. Fetch ALL scores to calculate accurate averages
-    # We need player names from the related table
-    avg_res = db.table("scores").select("score_value, players(name)").execute()
+    res_avg = db.table("scores").select("score_value, players(name)").execute()
 
-    if avg_res.data:
-        # 2. Group scores by player name
+    if res_avg.data:
+        # 2. Group scores by player
         player_stats = {}
-        for row in avg_res.data:
+        for row in res_avg.data:
             name = row['players']['name']
             score = row['score_value']
-            
             if name not in player_stats:
                 player_stats[name] = []
             player_stats[name].append(score)
 
-        # 3. Calculate Average and Game Count
-        summary_data = []
+        # 3. Process the math
+        avg_list = []
         for name, scores in player_stats.items():
-            avg_score = sum(scores) / len(scores)
-            summary_data.append({
+            avg_val = sum(scores) / len(scores)
+            avg_list.append({
                 "Player": name,
-                "Average": round(avg_score, 1),
+                "Average": round(avg_val, 1),
                 "Games": len(scores)
             })
 
-        # 4. Sort by Average (Descending) and take Top 5
-        summary_data = sorted(summary_data, key=lambda x: x['Average'], reverse=True)[:5]
+        # 4. Sort and Slice
+        avg_list = sorted(avg_list, key=lambda x: x['Average'], reverse=True)[:5]
 
-        # 5. Display the consistency board
-        st.table(summary_data) 
-        # Note: I used st.table here for a different visual style than the dataframe above!
-    st.dataframe(avg_list, hide_index=True, use_container_width=True)
-    
+        # 5. Display with hidden index
+        st.dataframe(avg_list, hide_index=True, use_container_width=True)
     else:
-        st.info("Not enough data to calculate averages yet.")
+        st.info("Record more games to see the consistency leaderboard!")
 
 except Exception as e:
     st.error(f"Error in Section 6: {e}")
