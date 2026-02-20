@@ -17,16 +17,31 @@ else:
 # 3. App Title
 st.title("🎳 Bowling App: Live Feed")
 
-# 4. Display Section (Read)
-st.header("Current Players")
+# --- 📊 SECTION 4: TOP 5 LEADERBOARD ---
+st.header("🏆 Top 5 Leaderboard")
+
 try:
-    res = db.table("players").select("*").execute()
+    # 1. We tell Supabase to get the score AND the name from the linked player table
+    # 2. We order by score_value (High to Low)
+    # 3. We limit to the top 5
+    res = db.table("scores").select("""
+        score_value,
+        players ( name )
+    """).order("score_value", desc=True).limit(5).execute()
+
     if res.data:
-        st.dataframe(res.data, use_container_width=True)
+        # We clean the data so it looks nice in the table (removing brackets/braces)
+        formatted_leaderboard = [
+            {"Player": row['players']['name'], "Score": row['score_value']} 
+            for row in res.data
+        ]
+        st.table(formatted_leaderboard)
     else:
-        st.info("No players found. Use the form below to add one!")
+        st.info("No scores found yet!")
+
 except Exception as e:
-    st.error(f"Database Error: {e}")
+    st.error(f"Error loading leaderboard: {e}")
+    st.info("💡 Tip: Ensure your 'scores' table has a Foreign Key column linking to 'players'.")
 
 # 5. Input Section (Create)
 st.divider()
