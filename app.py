@@ -51,42 +51,44 @@ try:
     player_res = db.table("players").select("id, name").execute()
     player_map = {p['name']: p['id'] for p in player_res.data} if player_res.data else {}
     
-    # 2. Add a special option to the list
     player_options = ["+ Add New Player"] + list(player_map.keys())
 
     with st.form("score_form", clear_on_submit=True):
         selected_option = st.selectbox("Who is playing?", options=player_options)
         
-        # 3. Show a text input ONLY if "+ Add New Player" is selected
-        new_player_name = ""
+        # --- THE FIX IS HERE ---
+        # We only create the text input variable if the dropdown matches our trigger
+        new_player_name = "" 
         if selected_option == "+ Add New Player":
-            new_player_name = st.text_input("Enter New Player Name")
-        
+            new_player_name = st.text_input("Enter New Player Name", placeholder="e.g. John Doe")
+        # -----------------------
+
         new_score = st.number_input("Score", min_value=0, max_value=300, step=1)
         submit_score = st.form_submit_button("Save Score")
 
         if submit_score:
             target_id = None
             
-            # 4. If it's a new player, insert them into the 'players' table first
+            # Logic for New Player
             if selected_option == "+ Add New Player":
                 if new_player_name.strip():
-                    new_p_res = db.table("players").insert({"name": new_player_name}).execute()
+                    # Insert new player and grab their generated ID
+                    new_p_res = db.table("players").insert({"name": new_player_name.strip()}).execute()
                     target_id = new_p_res.data[0]['id']
                 else:
-                    st.error("Please enter a name for the new player.")
+                    st.error("Please provide a name for the new player.")
                     st.stop()
+            # Logic for Existing Player
             else:
                 target_id = player_map[selected_option]
 
-            # 5. Insert the score using the ID (either existing or newly created)
             if target_id:
                 db.table("scores").insert({
                     "player_id": target_id,
                     "score_value": new_score
                 }).execute()
                 
-                st.success(f"Score saved for {new_player_name if new_player_name else selected_option}!")
+                st.success("Score recorded successfully!")
                 st.rerun()
 
 except Exception as e:
