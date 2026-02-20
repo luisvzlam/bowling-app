@@ -59,18 +59,40 @@ try:
 except Exception as e:
     st.error(f"Error loading leaderboard: {e}")
 
-# 5. Input Section (Create)
+# --- 📝 SECTION 5: RECORD A NEW SCORE ---
 st.divider()
-st.subheader("Add New Player")
-with st.form("player_entry", clear_on_submit=True):
-    name = st.text_input("Player Name")
-    if st.form_submit_button("Add to Database"):
-        if name:
-            try:
-                db.table("players").insert({"name": name}).execute()
-                st.success(f"Added {name}!")
-                st.rerun() # Refreshes the list immediately
-            except Exception as e:
-                st.error(f"Failed to add player: {e}")
-        else:
-            st.warning("Please enter a name.")
+st.subheader("Add New Score")
+
+try:
+    # 1. Fetch current players so we can choose one from a list
+    player_res = db.table("players").select("id, name").execute()
+    
+    if player_res.data:
+        # Create a dictionary to map names to IDs: {"Luis": 1, "Friend": 2}
+        player_map = {p['name']: p['id'] for p in player_res.data}
+        player_names = list(player_map.keys())
+
+        with st.form("score_form", clear_on_submit=True):
+            # Input fields
+            selected_name = st.selectbox("Select Player", options=player_names)
+            new_score = st.number_input("Enter Score", min_value=0, max_value=300, step=1)
+            
+            submit_score = st.form_submit_button("Save Score")
+
+            if submit_score:
+                # Get the ID for the selected name
+                chosen_id = player_map[selected_name]
+                
+                # Insert the score into the 'scores' table
+                db.table("scores").insert({
+                    "player_id": chosen_id,
+                    "score_value": new_score
+                }).execute()
+                
+                st.success(f"Successfully saved score of {new_score} for {selected_name}!")
+                st.rerun()
+    else:
+        st.warning("No players found. Please add a player in the database first!")
+
+except Exception as e:
+    st.error(f"Error loading players or saving score: {e}")
